@@ -27,9 +27,9 @@
 
 ¡Listo! Ya puedes jugar directamente sin necesidad de instalar dependencias.
 
-## Demo en Línea
+## Demo en Línea  
 Puedes probar la versión en vivo del juego aquí:  
-[https://pingpongver2.netlify.app/](https://pingpongver2.netlify.app/)
+<a href="https://pingpongver2.netlify.app/" target="_blank">https://pingpongver2.netlify.app/</a>
 
 ## Créditos
 Desarrollado por **Francesco Riva** como parte del curso **"Desarrollo de Juegos Interactivos 2"** - UTP 2025
