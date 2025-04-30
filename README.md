@@ -32,4 +32,4 @@ Puedes probar la versión en vivo del juego aquí:
 [https://pingpongver2.netlify.app/](https://pingpongver2.netlify.app/)
 
 ## Créditos 🙌
-Desarrollado como parte del curso **"Desarrollo de Juegos Interactivos 2"** - UTP 2024
+Desarrollado por **Francesco Riva** como parte del curso **"Desarrollo de Juegos Interactivos 2"** - UTP 2025
