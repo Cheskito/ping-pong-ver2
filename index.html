@@ -1,14 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ping Pong Game Ver. 2</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ping Pong Game Ver. 2</title>
+
+  <!-- Estilos -->
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #000;
+    }
+
+    canvas {
+      border: 1px solid #fff;
+    }
+  </style>
 </head>
 
 <body>
-    <h1>Hola</h1>
+
+  <canvas id="pong" width="800" height="400"></canvas>
+
+  <script>
+    // Variables globales
+    const canvas = document.getElementById('pong');
+    const ctx = canvas.getContext('2d');
+
+    const paddleWidth = 10, paddleHeight = 100;
+    const paddleSpeed = 4;
+    const ballSize = 10;
+    let leftPaddleY = canvas.height / 2 - paddleHeight / 2;
+    let rightPaddleY = canvas.height / 2 - paddleHeight / 2;
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballSpeedX = 4;
+    let ballSpeedY = 2;
+    
+    // Objeto para rastrear teclas presionadas
+    const keys = {
+      w: false,
+      s: false,
+      ArrowUp: false,
+      ArrowDown: false
+    };
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(10, leftPaddleY, paddleWidth, paddleHeight);
+
+      ctx.fillRect(canvas.width - 20, rightPaddleY, paddleWidth, paddleHeight);
+
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2, false);
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function update() {
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Lógica de colisiones
+      if (ballY <= 0 || ballY >= canvas.height) {
+        ballSpeedY = -ballSpeedY;
+      }
+
+      if (ballX <= 20 && ballY >= leftPaddleY && ballY <= leftPaddleY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+      }
+
+      if (ballX >= canvas.width - 20 && ballY >= rightPaddleY && ballY <= rightPaddleY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+      }
+
+      // Control de las paletas usando el estado de las teclas
+      if (keys.w && leftPaddleY > 0) {
+        leftPaddleY -= paddleSpeed;
+      }
+      if (keys.s && leftPaddleY < canvas.height - paddleHeight) {
+        leftPaddleY += paddleSpeed;
+      }
+      if (keys.ArrowUp && rightPaddleY > 0) {
+        rightPaddleY -= paddleSpeed;
+      }
+      if (keys.ArrowDown && rightPaddleY < canvas.height - paddleHeight) {
+        rightPaddleY += paddleSpeed;
+      }
+    }
+
+    // Eventos de teclado
+    document.addEventListener('keydown', function(e) {
+      if (keys.hasOwnProperty(e.key)) {
+        keys[e.key] = true;
+      }
+    });
+
+    document.addEventListener('keyup', function(e) {
+      if (keys.hasOwnProperty(e.key)) {
+        keys[e.key] = false;
+      }
+    });
+
+    function gameLoop() {
+      draw();
+      update();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+
+  </script>
+
 </body>
 
 </html>
