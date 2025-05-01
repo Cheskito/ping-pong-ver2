@@ -1,124 +1,514 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ping Pong Game Ver. 2</title>
 
-  <!-- Estilos -->
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #000;
-    }
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    canvas {
-      border: 1px solid #fff;
-    }
-  </style>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- jQuery y jQuery UI -->
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 </head>
 
-<body>
+<body class="bg-black min-h-screen flex flex-col items-center justify-center relative">
+  <!-- Menú Principal -->
+  <div id="mainMenu" class="text-white text-center">
+    <h1 class="text-6xl font-bold mb-8">PING PONG VER 2</h1>
+    <div class="flex flex-col gap-4 items-center">
+      <button id="startGame" class="bg-white text-black px-8 py-4 rounded-lg text-xl hover:bg-gray-200 transition-colors w-48">
+        Iniciar Juego
+      </button>
+      <button id="showControls" class="bg-gray-600 text-white px-8 py-4 rounded-lg text-xl hover:bg-gray-700 transition-colors w-48">
+        Controles
+      </button>
+    </div>
+  </div>
 
-  <canvas id="pong" width="800" height="400"></canvas>
+  <!-- Área de Juego -->
+  <div id="gameArea" class="hidden">
+    <canvas id="pong" width="800" height="400" class="border border-white"></canvas>
+    
+    <!-- Marcador -->
+    <div id="scoreBoard" class="text-white text-2xl mt-4 text-center">
+      <span id="leftScore">0</span>
+      <span class="mx-4">-</span>
+      <span id="rightScore">0</span>
+    </div>
+  </div>
+
+  <!-- Nivel Actual -->
+  <div id="levelAnnouncement" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-6xl font-bold z-50"></div>
+
+  <!-- Modal de Fin de Juego -->
+  <div id="gameOverDialog" title="¡FIN DEL JUEGO!" class="hidden">
+    <div class="bg-black text-white p-8 border border-white">
+      <p id="winnerText" class="text-2xl mb-8 text-center border-b border-white pb-4"></p>
+      <div class="flex flex-col gap-4">
+        <button id="playAgain" class="w-full bg-black text-white px-8 py-4 border border-white hover:bg-white hover:text-black transition-colors text-xl">Jugar de Nuevo</button>
+        <button id="backToMenu" class="w-full bg-black text-white px-8 py-4 border border-white hover:bg-white hover:text-black transition-colors text-xl">Menú Principal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Controles -->
+  <div id="controlsDialog" title="CONTROLES" class="hidden">
+    <div class="bg-black text-white p-8 border border-white">
+      <div class="grid grid-cols-2 gap-12 mb-8">
+        <div class="text-center">
+          <h3 class="text-2xl mb-4 border-b border-white pb-2">P1</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-center gap-4">
+              <span class="inline-block w-8 h-8 border border-white flex items-center justify-center">W</span>
+              <span class="text-gray-400">↑</span>
+            </div>
+            <div class="flex items-center justify-center gap-4">
+              <span class="inline-block w-8 h-8 border border-white flex items-center justify-center">S</span>
+              <span class="text-gray-400">↓</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-center">
+          <h3 class="text-2xl mb-4 border-b border-white pb-2">P2</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-center gap-4">
+              <span class="inline-block w-8 h-8 border border-white flex items-center justify-center">↑</span>
+              <span class="text-gray-400">↑</span>
+            </div>
+            <div class="flex items-center justify-center gap-4">
+              <span class="inline-block w-8 h-8 border border-white flex items-center justify-center">↓</span>
+              <span class="text-gray-400">↓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center border-t border-white pt-6">
+        <h3 class="text-xl mb-4">PAUSA</h3>
+        <div class="flex justify-center">
+          <span class="inline-block px-4 py-2 border border-white">ESC</span>
+        </div>
+      </div>
+      <!-- Paleta demostrativa -->
+      <div class="relative h-48 mt-8">
+        <div class="absolute left-1/2 h-full w-px bg-white opacity-50"></div>
+        <div id="demoPaddle" class="absolute left-1/2 w-2 h-16 bg-white transform -translate-x-full"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Pausa -->
+  <div id="pauseDialog" title="PAUSA" class="hidden">
+    <div class="bg-black text-white p-8 border border-white">
+      <div class="text-center border-b border-white pb-4 mb-8">
+        <h3 class="text-2xl">JUEGO EN PAUSA</h3>
+      </div>
+      <div class="flex flex-col gap-4">
+        <button id="resumeGame" class="w-full bg-black text-white px-8 py-4 border border-white hover:bg-white hover:text-black transition-colors text-xl">Continuar</button>
+        <button id="restartGame" class="w-full bg-black text-white px-8 py-4 border border-white hover:bg-white hover:text-black transition-colors text-xl">Reiniciar Juego</button>
+        <button id="pauseToMenu" class="w-full bg-black text-white px-8 py-4 border border-white hover:bg-white hover:text-black transition-colors text-xl">Menú Principal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nombre del Autor -->
+  <div class="fixed bottom-4 text-white text-center w-full">
+    <p>Desarrollado por Francesco Riva</p>
+  </div>
 
   <script>
-    // Variables globales
-    const canvas = document.getElementById('pong');
-    const ctx = canvas.getContext('2d');
+    $(document).ready(function() {
+      // Variables del juego
+      const canvas = $('#pong')[0];
+      const ctx = canvas.getContext('2d');
+      const paddleWidth = 10, paddleHeight = 100;
+      const paddleSpeed = 4;
+      const ballSize = 10;
+      let animationFrameId = null;
+      let currentLevel = 1;
+      let leftScore = 0, rightScore = 0;
+      let isPaused = false; // Variable para controlar si el juego está pausado
+      let isInTransition = false; // Variable para controlar si el juego está en transición (conteo regresivo o cambio de nivel)
+      let gameState = {
+        leftPaddleY: canvas.height / 2 - paddleHeight / 2,
+        rightPaddleY: canvas.height / 2 - paddleHeight / 2,
+        ballX: canvas.width / 2,
+        ballY: canvas.height / 2,
+        ballSpeedX: 4,
+        ballSpeedY: 2,
+        keys: {
+          w: false,
+          s: false,
+          ArrowUp: false,
+          ArrowDown: false
+        }
+      };
 
-    const paddleWidth = 10, paddleHeight = 100;
-    const paddleSpeed = 4;
-    const ballSize = 10;
-    let leftPaddleY = canvas.height / 2 - paddleHeight / 2;
-    let rightPaddleY = canvas.height / 2 - paddleHeight / 2;
-    let ballX = canvas.width / 2;
-    let ballY = canvas.height / 2;
-    let ballSpeedX = 4;
-    let ballSpeedY = 2;
-    
-    // Objeto para rastrear teclas presionadas
-    const keys = {
-      w: false,
-      s: false,
-      ArrowUp: false,
-      ArrowDown: false
-    };
+      // Configuración del diálogo de fin de juego
+      $('#gameOverDialog').dialog({
+        autoOpen: false,
+        modal: true,
+        closeOnEscape: false,
+        resizable: false,
+        draggable: false,
+        width: 600,
+        classes: {
+          'ui-dialog': 'bg-black border-2 border-white',
+          'ui-dialog-titlebar': 'bg-black text-white border-b border-white text-2xl py-4',
+          'ui-dialog-content': 'p-0 bg-black'
+        }
+      });
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(10, leftPaddleY, paddleWidth, paddleHeight);
-
-      ctx.fillRect(canvas.width - 20, rightPaddleY, paddleWidth, paddleHeight);
-
-      ctx.beginPath();
-      ctx.arc(ballX, ballY, ballSize, 0, Math.PI * 2, false);
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    function update() {
-      ballX += ballSpeedX;
-      ballY += ballSpeedY;
-
-      // Lógica de colisiones
-      if (ballY <= 0 || ballY >= canvas.height) {
-        ballSpeedY = -ballSpeedY;
+      // Función para mostrar el contador regresivo
+      function showCountdown(callback) {
+        isInTransition = true;
+        let count = 3;
+        $('#levelAnnouncement').removeClass('hidden').show();
+        
+        function updateCount() {
+          if (count > 0) {
+            $('#levelAnnouncement').text(count);
+            count--;
+            setTimeout(updateCount, 1000);
+          } else {
+            $('#levelAnnouncement')
+              .text('¡YA!')
+              .fadeOut(1000, function() {
+                $(this).addClass('hidden');
+                if (callback) {
+                  isInTransition = false;
+                  callback();
+                }
+              });
+          }
+        }
+        
+        updateCount();
       }
 
-      if (ballX <= 20 && ballY >= leftPaddleY && ballY <= leftPaddleY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
+      // Función para mostrar el nivel
+      function showLevel(level) {
+        // Asegurar que el juego esté pausado
+        pauseGame();
+        
+        // Mostrar el anuncio del nivel
+        $('#levelAnnouncement')
+          .text('Nivel ' + level)
+          .removeClass('hidden')
+          .fadeIn()
+          .delay(2000)
+          .fadeOut(function() {
+            $(this).addClass('hidden');
+            // Iniciar la cuenta regresiva y luego reanudar el juego
+            showCountdown(function() {
+              // Reiniciar la pelota con la velocidad adecuada para el nivel actual
+              resetBall();
+              // Reanudar el juego
+              resumeGame();
+            });
+          });
       }
 
-      if (ballX >= canvas.width - 20 && ballY >= rightPaddleY && ballY <= rightPaddleY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
+      // Función para reiniciar la pelota
+      function resetBall() {
+        gameState.ballX = canvas.width / 2;
+        gameState.ballY = canvas.height / 2;
+        
+        const baseSpeedX = currentLevel === 1 ? 5 : 8;
+        const baseSpeedY = currentLevel === 1 ? 2 : 3;
+        
+        gameState.ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * baseSpeedX;
+        gameState.ballSpeedY = (Math.random() * 4 - 2) * baseSpeedY;
       }
 
-      // Control de las paletas usando el estado de las teclas
-      if (keys.w && leftPaddleY > 0) {
-        leftPaddleY -= paddleSpeed;
-      }
-      if (keys.s && leftPaddleY < canvas.height - paddleHeight) {
-        leftPaddleY += paddleSpeed;
-      }
-      if (keys.ArrowUp && rightPaddleY > 0) {
-        rightPaddleY -= paddleSpeed;
-      }
-      if (keys.ArrowDown && rightPaddleY < canvas.height - paddleHeight) {
-        rightPaddleY += paddleSpeed;
-      }
-    }
+      // Función para dibujar
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
 
-    // Eventos de teclado
-    document.addEventListener('keydown', function(e) {
-      if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = true;
+        // Dibujar paletas
+        ctx.fillRect(10, gameState.leftPaddleY, paddleWidth, paddleHeight);
+        ctx.fillRect(canvas.width - 20, gameState.rightPaddleY, paddleWidth, paddleHeight);
+
+        // Dibujar pelota
+        ctx.beginPath();
+        ctx.arc(gameState.ballX, gameState.ballY, ballSize, 0, Math.PI * 2, false);
+        ctx.fill();
+        ctx.closePath();
       }
+
+      // Función de actualización
+      function update() {
+        // Movimiento de la pelota
+        gameState.ballX += gameState.ballSpeedX;
+        gameState.ballY += gameState.ballSpeedY;
+
+        // Colisiones con bordes superior e inferior
+        if (gameState.ballY <= 0 || gameState.ballY >= canvas.height) {
+          gameState.ballSpeedY = -gameState.ballSpeedY;
+        }
+
+        // Colisiones con paletas
+        if (gameState.ballX <= 20 && gameState.ballY >= gameState.leftPaddleY && 
+            gameState.ballY <= gameState.leftPaddleY + paddleHeight) {
+          gameState.ballSpeedX = -gameState.ballSpeedX;
+        }
+
+        if (gameState.ballX >= canvas.width - 20 && gameState.ballY >= gameState.rightPaddleY && 
+            gameState.ballY <= gameState.rightPaddleY + paddleHeight) {
+          gameState.ballSpeedX = -gameState.ballSpeedX;
+        }
+
+        // Goles
+        if (gameState.ballX <= 0) {
+          rightScore++;
+          $('#rightScore').text(rightScore);
+          checkGameProgress();
+          resetBall();
+        } else if (gameState.ballX >= canvas.width) {
+          leftScore++;
+          $('#leftScore').text(leftScore);
+          checkGameProgress();
+          resetBall();
+        }
+
+        // Control de paletas
+        if (gameState.keys.w && gameState.leftPaddleY > 0) {
+          gameState.leftPaddleY -= paddleSpeed;
+        }
+        if (gameState.keys.s && gameState.leftPaddleY < canvas.height - paddleHeight) {
+          gameState.leftPaddleY += paddleSpeed;
+        }
+        if (gameState.keys.ArrowUp && gameState.rightPaddleY > 0) {
+          gameState.rightPaddleY -= paddleSpeed;
+        }
+        if (gameState.keys.ArrowDown && gameState.rightPaddleY < canvas.height - paddleHeight) {
+          gameState.rightPaddleY += paddleSpeed;
+        }
+      }
+
+      // Verificar progreso del juego
+      function checkGameProgress() {
+        if (currentLevel === 1 && (leftScore >= 3 || rightScore >= 3)) {
+          currentLevel = 2;
+          startNextLevel();
+        } else if (currentLevel === 2 && (leftScore >= 5 || rightScore >= 5)) {
+          endGame();
+          isPaused = true;
+        }
+      }
+      
+      // Función para iniciar el siguiente nivel
+      function startNextLevel() {
+        // Detener completamente el juego
+        pauseGame();
+        
+        // Reiniciar puntuaciones para el nuevo nivel
+        leftScore = rightScore = 0;
+        $('#leftScore').text('0');
+        $('#rightScore').text('0');
+        
+        // Reiniciar posiciones
+        gameState.leftPaddleY = gameState.rightPaddleY = canvas.height / 2 - paddleHeight / 2;
+        
+        // Mostrar anuncio del nuevo nivel
+        showLevel(currentLevel);
+      }
+
+      // Funciones de control del juego
+      function startGame() {
+        $('#mainMenu').addClass('hidden');
+        $('#gameArea').removeClass('hidden');
+        resetGame();
+        showLevel(currentLevel);
+      }
+
+      function pauseGame() {
+        // Detener el loop de animación
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        // Establecer el estado de pausa
+        isPaused = true;
+        
+        // Desactivar temporalmente las teclas
+        const originalKeys = {...gameState.keys};
+        Object.keys(gameState.keys).forEach(key => {
+          gameState.keys[key] = false;
+        });
+        
+        // Guardar las teclas originales para restaurarlas después
+        gameState.originalKeys = originalKeys;
+      }
+
+      function resumeGame() {
+        // Restaurar el estado de las teclas si existen
+        if (gameState.originalKeys) {
+          gameState.keys = {...gameState.originalKeys};
+          delete gameState.originalKeys;
+        }
+        
+        // Quitar el estado de pausa
+        isPaused = false;
+        
+        // Reiniciar el loop de animación
+        if (!animationFrameId) {
+          animationFrameId = requestAnimationFrame(gameLoop);
+        }
+      }
+
+      function resetGame() {
+        leftScore = rightScore = 0;
+        currentLevel = 1;
+        $('#leftScore').text('0');
+        $('#rightScore').text('0');
+        resetBall();
+        gameState.leftPaddleY = gameState.rightPaddleY = canvas.height / 2 - paddleHeight / 2;
+      }
+
+      function endGame() {
+        isPaused = true;
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        const winner = leftScore > rightScore ? 'Jugador 1' : 'Jugador 2';
+        $('#winnerText').text(`¡${winner} ha ganado el juego!`);
+        $('#gameOverDialog').dialog('open');
+      }
+
+      // Loop principal del juego
+      function gameLoop() {
+        // Solo actualizar y dibujar si el juego no está pausado
+        if (!isPaused) {
+          draw();
+          update();
+        }
+        
+        // Continuar el loop de animación
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
+
+      // Configuración del diálogo de controles
+      $('#controlsDialog').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 600,
+        resizable: false,
+        draggable: false,
+        classes: {
+          'ui-dialog': 'bg-black border-2 border-white',
+          'ui-dialog-titlebar': 'bg-black text-white border-b border-white text-2xl py-4',
+          'ui-dialog-content': 'p-0 bg-black'
+        }
+      });
+
+      // Animación de la paleta demostrativa
+      function animateDemoPaddle() {
+        const paddle = $('#demoPaddle');
+        const container = paddle.parent();
+        const paddleHeight = paddle.height();
+        const containerHeight = container.height();
+        const maxTop = containerHeight - paddleHeight;
+        
+        paddle.css('top', '0');
+        function moveDown() {
+          paddle.animate({ top: maxTop }, 1500, 'linear', moveUp);
+        }
+        
+        function moveUp() {
+          paddle.animate({ top: 0 }, 1500, 'linear', moveDown);
+        }
+        
+        moveDown();
+      }
+
+      // Event listener para el botón de controles
+      $('#showControls').on('click', function() {
+        $('#controlsDialog').dialog('open');
+        animateDemoPaddle();
+      });
+
+      // Configuración del diálogo de pausa
+      $('#pauseDialog').dialog({
+        autoOpen: false,
+        modal: true,
+        closeOnEscape: false,
+        resizable: false,
+        draggable: false,
+        width: 600,
+        classes: {
+          'ui-dialog': 'bg-black border-2 border-white',
+          'ui-dialog-titlebar': 'bg-black text-white border-b border-white text-2xl py-4',
+          'ui-dialog-content': 'p-0 bg-black'
+        },
+        beforeClose: function() {
+          if (!isPaused) return;
+          resumeGame();
+        }
+      });
+
+      // Event Listeners
+      $('#startGame').on('click', startGame);
+      $('#playAgain').on('click', function() {
+        $('#gameOverDialog').dialog('close');
+        resetGame();
+        showLevel(currentLevel);
+      });
+      $('#backToMenu').on('click', function() {
+        $('#gameOverDialog').dialog('close');
+        $('#gameArea').addClass('hidden');
+        $('#mainMenu').removeClass('hidden');
+        resetGame();
+      });
+
+      // Event Listeners para el menú de pausa
+      $('#resumeGame').on('click', function() {
+        $('#pauseDialog').dialog('close');
+        resumeGame();
+      });
+      
+      $('#restartGame').on('click', function() {
+        $('#pauseDialog').dialog('close');
+        resetGame();
+        showLevel(currentLevel);
+      });
+      
+      $('#pauseToMenu').on('click', function() {
+        $('#pauseDialog').dialog('close');
+        $('#gameArea').addClass('hidden');
+        $('#mainMenu').removeClass('hidden');
+        resetGame();
+      });
+
+      $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' && !$('#gameOverDialog').dialog('isOpen')) {
+          if ($('#pauseDialog').dialog('isOpen')) {
+            $('#pauseDialog').dialog('close');
+            resumeGame();
+          } else if ($('#gameArea').is(':visible') && !isInTransition && !isPaused) {
+            pauseGame();
+            $('#pauseDialog').dialog('open');
+          }
+          return;
+        }
+        if (gameState.keys.hasOwnProperty(e.key)) {
+          gameState.keys[e.key] = true;
+        }
+      });
+
+      $(document).on('keyup', function(e) {
+        if (gameState.keys.hasOwnProperty(e.key)) {
+          gameState.keys[e.key] = false;
+        }
+      });
     });
-
-    document.addEventListener('keyup', function(e) {
-      if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = false;
-      }
-    });
-
-    function gameLoop() {
-      draw();
-      update();
-      requestAnimationFrame(gameLoop);
-    }
-
-    gameLoop();
-
   </script>
-
 </body>
-
 </html>
