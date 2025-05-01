@@ -122,7 +122,71 @@
   </div>
 
   <script>
+    // Sistema de Audio
+    const AudioSystem = {
+      titleTheme: new Audio('assets/music/title-screen-theme.ogg'),
+      selectSound: new Audio('assets/music/select-sound.ogg'),
+      gameTheme: new Audio('assets/music/game-theme.ogg'),
+      palletHitSound: new Audio('assets/music/pallet-hit-sound.ogg'),
+      scoreHitSound: new Audio('assets/music/score-hit-sound.ogg'),
+
+      init() {
+        this.gameTheme.loop = true;
+        this.titleTheme.volume = 1.0;
+        this.gameTheme.volume = 1.0;
+        this.selectSound.volume = 1.0;
+        this.palletHitSound.volume = 1.0;
+        this.scoreHitSound.volume = 1.0;
+      },
+
+      playTitleTheme() {
+        this.stopAll();
+        this.titleTheme.currentTime = 0;
+        this.titleTheme.play();
+      },
+
+      playSelectSound() {
+        this.selectSound.currentTime = 0;
+        this.selectSound.play();
+      },
+
+      playGameTheme() {
+        this.stopAll();
+        this.gameTheme.currentTime = 0;
+        this.gameTheme.play();
+      },
+
+      playPalletHit() {
+        this.palletHitSound.currentTime = 0;
+        this.palletHitSound.play();
+      },
+
+      playScoreHit() {
+        this.scoreHitSound.currentTime = 0;
+        this.scoreHitSound.play();
+      },
+
+      setGameVolume(volume) {
+        this.gameTheme.volume = volume;
+      },
+
+      stopAll() {
+        this.titleTheme.pause();
+        this.gameTheme.pause();
+        this.titleTheme.currentTime = 0;
+        this.gameTheme.currentTime = 0;
+      }
+    };
+
     $(document).ready(function() {
+      // Agregar el event listener global para botones
+      $(document).on('click', 'button', function() {
+        AudioSystem.playSelectSound();
+      });
+      
+      // Inicializar sistema de audio
+      AudioSystem.init();
+      AudioSystem.playTitleTheme();
       // Variables del juego
       const canvas = $('#pong')[0];
       const ctx = canvas.getContext('2d');
@@ -257,22 +321,26 @@
         if (gameState.ballX <= 20 && gameState.ballY >= gameState.leftPaddleY && 
             gameState.ballY <= gameState.leftPaddleY + paddleHeight) {
           gameState.ballSpeedX = -gameState.ballSpeedX;
+          AudioSystem.playPalletHit();
         }
 
         if (gameState.ballX >= canvas.width - 20 && gameState.ballY >= gameState.rightPaddleY && 
             gameState.ballY <= gameState.rightPaddleY + paddleHeight) {
           gameState.ballSpeedX = -gameState.ballSpeedX;
+          AudioSystem.playPalletHit();
         }
 
         // Goles
         if (gameState.ballX <= 0) {
           rightScore++;
           $('#rightScore').text(rightScore);
+          AudioSystem.playScoreHit();
           checkGameProgress();
           resetBall();
         } else if (gameState.ballX >= canvas.width) {
           leftScore++;
           $('#leftScore').text(leftScore);
+          AudioSystem.playScoreHit();
           checkGameProgress();
           resetBall();
         }
@@ -326,6 +394,7 @@
         $('#gameArea').removeClass('hidden');
         resetGame();
         showLevel(currentLevel);
+        AudioSystem.playGameTheme();
       }
 
       function pauseGame() {
@@ -336,6 +405,9 @@
         }
         // Establecer el estado de pausa
         isPaused = true;
+        
+        // Bajar el volumen de la música
+        AudioSystem.setGameVolume(0.5);
         
         // Desactivar temporalmente las teclas
         const originalKeys = {...gameState.keys};
@@ -356,6 +428,9 @@
         
         // Quitar el estado de pausa
         isPaused = false;
+        
+        // Restaurar el volumen de la música
+        AudioSystem.setGameVolume(1.0);
         
         // Reiniciar el loop de animación
         if (!animationFrameId) {
@@ -431,6 +506,7 @@
 
       // Event listener para el botón de controles
       $('#showControls').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#controlsDialog').dialog('open');
         animateDemoPaddle();
       });
@@ -455,36 +531,51 @@
       });
 
       // Event Listeners
-      $('#startGame').on('click', startGame);
+      $('#startGame').on('click', function() {
+        AudioSystem.playSelectSound();
+        startGame();
+      });
       $('#playAgain').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#gameOverDialog').dialog('close');
         resetGame();
         showLevel(currentLevel);
       });
       $('#backToMenu').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#gameOverDialog').dialog('close');
         $('#gameArea').addClass('hidden');
         $('#mainMenu').removeClass('hidden');
+        AudioSystem.playTitleTheme();
         resetGame();
       });
 
       // Event Listeners para el menú de pausa
       $('#resumeGame').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#pauseDialog').dialog('close');
         resumeGame();
       });
       
       $('#restartGame').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#pauseDialog').dialog('close');
         resetGame();
         showLevel(currentLevel);
       });
       
       $('#pauseToMenu').on('click', function() {
+        AudioSystem.playSelectSound();
         $('#pauseDialog').dialog('close');
+        // Asegurar que el juego permanezca pausado
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        isPaused = true;
         $('#gameArea').addClass('hidden');
         $('#mainMenu').removeClass('hidden');
-        resetGame();
+        AudioSystem.playTitleTheme();
       });
 
       $(document).on('keydown', function(e) {
